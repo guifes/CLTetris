@@ -76,6 +76,8 @@ bool canSpawnPiece(const Board board, const Piece& currentPiece);
 int clearCompleteRows(Board board);
 
 bool isPointEqual(const Point& a, const Point& b);
+bool isPointInBoard(const Point& point);
+Point getPointFromPiece(const Piece& piece, const int index, const Point& position, const int rotation);
 
 int main(int argc, const char * argv[]) {
     
@@ -275,6 +277,16 @@ void generateRandomPiece(Piece& currentPiece)
     currentPiece.rotation = randomRotation;
 }
 
+Point getPointFromPiece(const Piece& piece, const int index, const Point& position, const int rotation)
+{
+    const Point* point = &(piece.pieceTemplate->points[rotation][index]);
+    
+    return {
+        point->x + position.x,
+        point->y + position.y
+    };
+}
+
 bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const Point& direction)
 {
     Point newPosition = {
@@ -284,20 +296,9 @@ bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const
     
     for(int i = 0; i < currentPiece.size; ++i)
     {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][i];
+        Point point = getPointFromPiece(currentPiece, i, newPosition, currentPiece.rotation);
         
-        Point point = {
-            piecePoint->x + newPosition.x,
-            piecePoint->y + newPosition.y
-        };
-        
-        if(
-            point.x < 0 ||
-            point.x >= BOARD_WIDTH ||
-            point.y < 0 ||
-            point.y >= BOARD_HEIGHT ||
-            board[point.x][point.y]
-        )
+        if(!isPointInBoard(point) || board[point.x][point.y])
         {
             return false;
         }
@@ -313,20 +314,9 @@ bool canTurnPiece(const Board board, const Piece& currentPiece, bool clockwise)
     
     for(int i = 0; i < currentPiece.size; ++i)
     {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[nextRotation][i];
+        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, nextRotation);
         
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
-        
-        if(
-           point.x < 0 ||
-           point.x >= BOARD_WIDTH ||
-           point.y < 0 ||
-           point.y >= BOARD_HEIGHT ||
-           board[point.x][point.y]
-        )
+        if(!isPointInBoard(point) || board[point.x][point.y])
         {
             return false;
         }
@@ -339,15 +329,25 @@ void setPieceInBoard(Board board, const Piece& currentPiece, const bool erase)
 {
     for(int i = 0; i < currentPiece.size; ++i)
     {
-        const Point* piecePoint = &(currentPiece.pieceTemplate->points[currentPiece.rotation][i]);
-        
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
+        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, currentPiece.rotation);
         
         board[point.x][point.y] = !erase;
     }
+}
+
+bool canSpawnPiece(const Board board, const Piece& currentPiece)
+{
+    for(int i = 0; i < currentPiece.size; ++i)
+    {
+        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, currentPiece.rotation);
+
+        if(board[point.x][point.y])
+        {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 int clearCompleteRows(Board board)
@@ -387,27 +387,17 @@ int clearCompleteRows(Board board)
     return score;
 }
 
-bool canSpawnPiece(const Board board, const Piece& currentPiece)
-{
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        const Point* piecePoint = &(currentPiece.pieceTemplate->points[currentPiece.rotation][i]);
-        
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
-
-        if(board[point.x][point.y])
-        {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
 bool isPointEqual(const Point& a, const Point& b)
 {
     return a.x == b.x && a.y == b.y;
+}
+
+bool isPointInBoard(const Point& point)
+{
+    return (
+        point.x >= 0 &&
+        point.x < BOARD_WIDTH &&
+        point.y >= 0 &&
+        point.y < BOARD_HEIGHT
+    );
 }
