@@ -66,19 +66,17 @@ void startGame();
 void printBoard(const Board board);
 
 void generateRandomPiece(Piece& currentPiece);
+
 void spawnPiece(Board board, const Piece& currentPiece);
+void setPieceInBoard(Board board, const Piece& currentPiece, const bool clear);
 
 bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const Point& direction);
-bool canTurnPieceClockwise(const Board board, const Piece& currentPiece);
-bool canTurnPieceCounterClockwise(const Board board, const Piece& currentPiece);
-
-void erasePiece(Board board, const Piece& currentPiece);
-void writePiece(Board board, const Piece& currentPiece);
-
+bool canTurnPiece(const Board board, const Piece& currentPiece, const bool clockwise);
 bool canSpawnPiece(const Board board, const Piece& currentPiece);
+
 int clearCompleteRows(Board board);
+
 bool isPointEqual(const Point& a, const Point& b);
-void movePiece();
 
 int main(int argc, const char * argv[]) {
     
@@ -110,6 +108,8 @@ int main(int argc, const char * argv[]) {
         while(true)
         {
             printBoard(board);
+            
+            setPieceInBoard(board, currentPiece, true);
             
             bool pieceMoved = false;
             Point movement = zero;
@@ -144,22 +144,20 @@ int main(int argc, const char * argv[]) {
                     }
                     break;
                 case 4:
-                    if(canTurnPieceClockwise(board, currentPiece))
+                    if(canTurnPiece(board, currentPiece, true))
                     {
                         pieceMoved = true;
                         rotationOffset = 1;
                     }
                     break;
                 case 5:
-                    if(canTurnPieceCounterClockwise(board, currentPiece))
+                    if(canTurnPiece(board, currentPiece, false))
                     {
                         pieceMoved = true;
-                        rotationOffset = currentPiece.pieceTemplate->rotations + 1;
+                        rotationOffset = currentPiece.pieceTemplate->rotations - 1;
                     }
                     break;
             }
-            
-            erasePiece(board, currentPiece);
             
             if(pieceMoved)
             {
@@ -172,11 +170,11 @@ int main(int argc, const char * argv[]) {
             if(canPieceMoveInDirection(board, currentPiece, down))
             {
                 currentPiece.position.y += 1;
-                writePiece(board, currentPiece);
+                setPieceInBoard(board, currentPiece, false);
             }
             else
             {
-                writePiece(board, currentPiece);
+                setPieceInBoard(board, currentPiece, false);
                 score += clearCompleteRows(board);
                 
                 break;
@@ -193,8 +191,8 @@ void parseFormat(const char format[], const int len, Point* dest)
 {
     int x, y;
     int count = 0;
-    Point pivot;
     int c = 0;
+    Point pivot;
     
     for(int i = 0; i < len; ++i)
     {
@@ -309,33 +307,12 @@ bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const
             piecePoint->y + newPosition.y
         };
         
-        bool internalPoint = false;
-        
-        for(int j = 0; j < currentPiece.size; ++j)
-        {
-            const Point* otherPiecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][j];
-            
-            Point otherPoint = {
-                otherPiecePoint->x + currentPiece.position.x,
-                otherPiecePoint->y + currentPiece.position.y
-            };
-            
-            if(isPointEqual(point, otherPoint))
-            {
-                internalPoint = true;
-                break;
-            }
-        }
-        
         if(
-           !internalPoint &&
-           (
-                point.x < 0 ||
-                point.x >= BOARD_WIDTH ||
-                point.y < 0 ||
-                point.y >= BOARD_HEIGHT ||
-                board[point.x][point.y]
-            )
+            point.x < 0 ||
+            point.x >= BOARD_WIDTH ||
+            point.y < 0 ||
+            point.y >= BOARD_HEIGHT ||
+            board[point.x][point.y]
         )
         {
             return false;
@@ -345,39 +322,10 @@ bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const
     return true;
 }
 
-void erasePiece(Board board, const Piece& currentPiece)
+bool canTurnPiece(const Board board, const Piece& currentPiece, bool clockwise)
 {
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][i];
-        
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
-        
-        board[point.x][point.y] = false;
-    }
-}
-
-void writePiece(Board board, const Piece& currentPiece)
-{
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][i];
-        
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
-        
-        board[point.x][point.y] = true;
-    }
-}
-
-bool canTurnPieceClockwise(const Board board, const Piece& currentPiece)
-{
-    int nextRotation = (currentPiece.rotation + 1) % currentPiece.pieceTemplate->rotations;
+    int rotationOffset = clockwise ? 1 : currentPiece.pieceTemplate->rotations - 1;
+    int nextRotation = (currentPiece.rotation + rotationOffset) % currentPiece.pieceTemplate->rotations;
     
     for(int i = 0; i < currentPiece.size; ++i)
     {
@@ -388,34 +336,13 @@ bool canTurnPieceClockwise(const Board board, const Piece& currentPiece)
             piecePoint->y + currentPiece.position.y
         };
         
-        bool internalPoint = false;
-        
-        for(int j = 0; j < currentPiece.size; ++j)
-        {
-            const Point* otherPiecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][j];
-            
-            Point otherPoint = {
-                otherPiecePoint->x + currentPiece.position.x,
-                otherPiecePoint->y + currentPiece.position.y
-            };
-            
-            if(isPointEqual(point, otherPoint))
-            {
-                internalPoint = true;
-                break;
-            }
-        }
-        
         if(
-           !internalPoint &&
-           (
-            point.x < 0 ||
-            point.x >= BOARD_WIDTH ||
-            point.y < 0 ||
-            point.y >= BOARD_HEIGHT ||
-            board[point.x][point.y]
-            )
-           )
+           point.x < 0 ||
+           point.x >= BOARD_WIDTH ||
+           point.y < 0 ||
+           point.y >= BOARD_HEIGHT ||
+           board[point.x][point.y]
+        )
         {
             return false;
         }
@@ -424,53 +351,19 @@ bool canTurnPieceClockwise(const Board board, const Piece& currentPiece)
     return true;
 }
 
-bool canTurnPieceCounterClockwise(const Board board, const Piece& currentPiece)
+void setPieceInBoard(Board board, const Piece& currentPiece, const bool erase)
 {
-    int nextRotation = (currentPiece.rotation + currentPiece.pieceTemplate->rotations - 1) % currentPiece.pieceTemplate->rotations;
-    
     for(int i = 0; i < currentPiece.size; ++i)
     {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[nextRotation][i];
+        const Point* piecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][i];
         
         Point point = {
             piecePoint->x + currentPiece.position.x,
             piecePoint->y + currentPiece.position.y
         };
         
-        bool internalPoint = false;
-        
-        for(int j = 0; j < currentPiece.size; ++j)
-        {
-            const Point* otherPiecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][j];
-            
-            Point otherPoint = {
-                otherPiecePoint->x + currentPiece.position.x,
-                otherPiecePoint->y + currentPiece.position.y
-            };
-            
-            if(isPointEqual(point, otherPoint))
-            {
-                internalPoint = true;
-                break;
-            }
-        }
-        
-        if(
-           !internalPoint &&
-           (
-            point.x < 0 ||
-            point.x >= BOARD_WIDTH ||
-            point.y < 0 ||
-            point.y >= BOARD_HEIGHT ||
-            board[point.x][point.y]
-            )
-           )
-        {
-            return false;
-        }
+        board[point.x][point.y] = !erase;
     }
-    
-    return true;
 }
 
 int clearCompleteRows(Board board)
@@ -507,7 +400,7 @@ int clearCompleteRows(Board board)
         }
     }
     
-    return 0;
+    return score;
 }
 
 bool canSpawnPiece(const Board board, const Piece& currentPiece)
