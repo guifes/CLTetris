@@ -10,7 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "formats.h"
+#include "pieces.h"
 
 #define BOARD_WIDTH 10
 #define BOARD_HEIGHT 16

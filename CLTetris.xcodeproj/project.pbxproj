@@ -23,7 +23,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		8C0A616E22C7C38800C1B4F8 /* formats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = formats.h; sourceTree = "<group>"; };
+		8C0A616E22C7C38800C1B4F8 /* pieces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pieces.h; sourceTree = "<group>"; };
 		8C170AE1224467D100F4B9D2 /* CLTetris */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CLTetris; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C170AE4224467D100F4B9D2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -59,7 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				8C170AE2224467D100F4B9D2 /* Products */,
-				8C0A616E22C7C38800C1B4F8 /* formats.h */,
+				8C0A616E22C7C38800C1B4F8 /* pieces.h */,
 				8C170AE4224467D100F4B9D2 /* main.cpp */,
 			);
 			path = CLTetris;
