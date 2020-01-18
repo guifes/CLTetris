@@ -67,7 +67,6 @@ void printBoard(const Board board);
 
 void generateRandomPiece(Piece& currentPiece);
 
-void spawnPiece(Board board, const Piece& currentPiece);
 void setPieceInBoard(Board board, const Piece& currentPiece, const bool clear);
 
 bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const Point& direction);
@@ -103,7 +102,7 @@ int main(int argc, const char * argv[]) {
             break;
         }
         
-        spawnPiece(board, currentPiece);
+        setPieceInBoard(board, currentPiece, false);
         
         while(true)
         {
@@ -276,21 +275,6 @@ void generateRandomPiece(Piece& currentPiece)
     currentPiece.rotation = randomRotation;
 }
 
-void spawnPiece(Board board, const Piece& currentPiece)
-{
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        const Point* piecePoint = &(currentPiece.pieceTemplate->points[currentPiece.rotation][i]);
-
-        Point point = {
-            piecePoint->x + currentPiece.position.x,
-            piecePoint->y + currentPiece.position.y
-        };
-
-        board[point.x][point.y] = true;
-    }
-}
-
 bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const Point& direction)
 {
     Point newPosition = {
@@ -355,7 +339,7 @@ void setPieceInBoard(Board board, const Piece& currentPiece, const bool erase)
 {
     for(int i = 0; i < currentPiece.size; ++i)
     {
-        const Point* piecePoint = &currentPiece.pieceTemplate->points[currentPiece.rotation][i];
+        const Point* piecePoint = &(currentPiece.pieceTemplate->points[currentPiece.rotation][i]);
         
         Point point = {
             piecePoint->x + currentPiece.position.x,
