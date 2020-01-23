@@ -15,6 +15,7 @@
 #define BOARD_WIDTH 10
 #define BOARD_HEIGHT 16
 #define PIECE_COUNT 6
+#define PIECE_SIZE 4
 
 typedef bool Board[BOARD_WIDTH][BOARD_HEIGHT];
 
@@ -25,7 +26,7 @@ struct Point
 
 struct PieceTemplate
 {
-    const Point (* const points)[4];
+    const Point (* const points)[PIECE_SIZE];
     const int rotations;
 };
 
@@ -33,7 +34,6 @@ struct Piece
 {
     const PieceTemplate *pieceTemplate;
     Point position;
-    int size;
     int rotation;
 };
 
@@ -43,12 +43,12 @@ const Point down =    {  0,  1 };
 const Point left =    { -1,  0 };
 const Point right =   {  1,  0 };
 
-Point line[2][4];
-Point star[4][4];
-Point step[2][4];
-Point caneRight[4][4];
-Point caneLeft[4][4];
-Point bloc[1][4];
+Point line[2][PIECE_SIZE];
+Point star[4][PIECE_SIZE];
+Point step[2][PIECE_SIZE];
+Point caneRight[4][PIECE_SIZE];
+Point caneLeft[4][PIECE_SIZE];
+Point bloc[1][PIECE_SIZE];
 
 const PieceTemplate pieceTypes[] = {
     { line, 2 },
@@ -71,13 +71,13 @@ void setPieceInBoard(Board board, const Piece& currentPiece, const bool clear);
 
 bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const Point& direction);
 bool canTurnPiece(const Board board, const Piece& currentPiece, const bool clockwise);
-bool canSpawnPiece(const Board board, const Piece& currentPiece);
 
 int clearCompleteRows(Board board);
 
 bool isPointEqual(const Point& a, const Point& b);
 bool isPointInBoard(const Point& point);
-Point getPointFromPiece(const Piece& piece, const int index, const Point& position, const int rotation);
+bool checkPieceCollision(const Board board, const PieceTemplate& pieceTemplate, const Point& position, const int rotation);
+Point getPointFromPiece(const PieceTemplate& pieceTemplate, const int index, const Point& position, const int rotation);
 
 int main(int argc, const char * argv[]) {
     
@@ -98,7 +98,7 @@ int main(int argc, const char * argv[]) {
     {
         generateRandomPiece(currentPiece);
         
-        if(!canSpawnPiece(board, currentPiece))
+        if(!checkPieceCollision(board, *(currentPiece.pieceTemplate), currentPiece.position, currentPiece.rotation))
         {
             // No more room for spawning pieces. Game ended.
             break;
@@ -273,13 +273,12 @@ void generateRandomPiece(Piece& currentPiece)
     
     currentPiece.pieceTemplate = pieceTemplate;
     currentPiece.position = { 5, 1 };
-    currentPiece.size = 4;
     currentPiece.rotation = randomRotation;
 }
 
-Point getPointFromPiece(const Piece& piece, const int index, const Point& position, const int rotation)
+Point getPointFromPiece(const PieceTemplate& pieceTemplate, const int index, const Point& position, const int rotation)
 {
-    const Point* point = &(piece.pieceTemplate->points[rotation][index]);
+    const Point* point = &(pieceTemplate.points[rotation][index]);
     
     return {
         point->x + position.x,
@@ -294,17 +293,7 @@ bool canPieceMoveInDirection(const Board board, const Piece& currentPiece, const
         currentPiece.position.y + direction.y
     };
     
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        Point point = getPointFromPiece(currentPiece, i, newPosition, currentPiece.rotation);
-        
-        if(!isPointInBoard(point) || board[point.x][point.y])
-        {
-            return false;
-        }
-    }
-    
-    return true;
+    return checkPieceCollision(board, *(currentPiece.pieceTemplate), newPosition, currentPiece.rotation);
 }
 
 bool canTurnPiece(const Board board, const Piece& currentPiece, bool clockwise)
@@ -312,36 +301,26 @@ bool canTurnPiece(const Board board, const Piece& currentPiece, bool clockwise)
     int rotationOffset = clockwise ? 1 : currentPiece.pieceTemplate->rotations - 1;
     int nextRotation = (currentPiece.rotation + rotationOffset) % currentPiece.pieceTemplate->rotations;
     
-    for(int i = 0; i < currentPiece.size; ++i)
-    {
-        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, nextRotation);
-        
-        if(!isPointInBoard(point) || board[point.x][point.y])
-        {
-            return false;
-        }
-    }
-    
-    return true;
+    return checkPieceCollision(board, *(currentPiece.pieceTemplate), currentPiece.position, nextRotation);
 }
 
 void setPieceInBoard(Board board, const Piece& currentPiece, const bool erase)
 {
-    for(int i = 0; i < currentPiece.size; ++i)
+    for(int i = 0; i < PIECE_SIZE; ++i)
     {
-        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, currentPiece.rotation);
+        Point point = getPointFromPiece(*(currentPiece.pieceTemplate), i, currentPiece.position, currentPiece.rotation);
         
         board[point.x][point.y] = !erase;
     }
 }
 
-bool canSpawnPiece(const Board board, const Piece& currentPiece)
+bool checkPieceCollision(const Board board, const PieceTemplate& pieceTemplate, const Point& position, const int rotation)
 {
-    for(int i = 0; i < currentPiece.size; ++i)
+    for(int i = 0; i < PIECE_SIZE; ++i)
     {
-        Point point = getPointFromPiece(currentPiece, i, currentPiece.position, currentPiece.rotation);
+        Point point = getPointFromPiece(pieceTemplate, i, position, rotation);
 
-        if(board[point.x][point.y])
+        if(!isPointInBoard(point) || board[point.x][point.y])
         {
             return false;
         }
